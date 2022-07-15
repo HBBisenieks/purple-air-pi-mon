@@ -18,12 +18,7 @@ BASE_URL = "https://api.purpleair.com/v1/sensors/"
 
 led = machine.Pin("LED", machine.Pin.OUT)
 
-"""
-Since there's not a sensor right by my place, sensors are entered as tuples
-where the first value is the sensor id and the second value is the weight of
-the sensor data, where higher numbers mean a closer sensor with more weight
-"""
-sensors = [("106120", 4), ("119485", 2), ("46331", 1), ("67261", 1)]
+sensors = config.sensors
 
 def get_aqi(sensor_id):
     """
