@@ -22,10 +22,6 @@ WPA3 = config.WPA3
 sensors = config.sensors
 pixels = 4
 
-SENSOR_WEIGHT = 0
-for sensor in sensors:
-    SENSOR_WEIGHT = SENSOR_WEIGHT + sensor[1]
-
 """
 Physical components
 """
@@ -70,26 +66,25 @@ def get_aqi(sensor_id):
 
 def calculate_aqi(current_aqi):
     """
-    Run average for AQI numbers and update as long as all readings can be
-    collected; otherwise, keep most-recent complete reading
-
-    This could be made more fault-tolerant and probably should be, but that's
-    a problem for future-Hilary to solve (the solution is just to calculate the
-    sensor number/weight at runtime every time, but I already wrote it this way)
+    Run average for AQI numbers and update as long as at least one reading can be
+    collected; otherwise, keep most-recent reading
     """
     new_aqi = 0
+    num_sensors = 0
     new_reading = True
+    global sensors
 
     for sensor in sensors:
         aqi = get_aqi(sensor[0])
         if aqi:
-            new_aqi = new_aqi + (aqi * sensor[1])
-        else:
-            new_reading = False
-            break
+            new_aqi += (aqi * sensor[1])
+            num_sensors += sensor[1]
+
+    if new_aqi == 0:
+        new_reading = False
 
     if new_reading:
-        new_aqi = new_aqi / SENSOR_WEIGHT
+        new_aqi /= num_sensors
     else:
         new_aqi = current_aqi
 
@@ -102,6 +97,7 @@ def set_color(aqi):
     """
     global CURRENT_COLOR
     CURRENT_COLOR = YELLOW
+    print(CURRENT_COLOR)
 
 
 def update_aqi():
@@ -119,6 +115,7 @@ def initialize_net():
     """
     Initializes network connection
     """
+    print(f"Connecting to network \"{SSID}\"...")
     led.off()
     led.toggle()
     time.sleep(3)
@@ -130,6 +127,7 @@ def initialize_net():
 
     max_wait = 10
     for i in range(max_wait):
+        print(".")
         if wlan.status() < 0 or wlan.status() >= 3:
             break
         time.sleep(1)
@@ -142,6 +140,7 @@ def initialize_net():
             time.sleep(.5)
         raise RuntimeError('network connection failed')
     else:
+        print("Connected!")
         led.on()
         time.sleep(3)
         led.off()
@@ -150,10 +149,11 @@ def initialize_net():
 def display_aqi():
     color_display.write()
     time.sleep(30)
-    
+
 
 
 def main():
+    print("Starting up...")
     initialize_net() # Initialize network connection
 
     _thread.start_new_thread(update_aqi, ()) # Start the AQI collection
